@@ -391,6 +391,7 @@ th {
     color: var(--text-secondary);
     font-weight: 600;
     border-bottom: 1px solid var(--dark-border);
+    white-space: nowrap;
 }
 
 td {
@@ -408,7 +409,11 @@ tbody tr:hover {
     padding: 2rem 1rem;
 }
 
-/* Responsive */
+/* Responsive Tables */
+.card table {
+    width: 100%;
+}
+
 @media (max-width: 768px) {
     .navbar {
         flex-direction: column;
@@ -428,12 +433,72 @@ tbody tr:hover {
         font-size: 1.5rem;
     }
 
+    .card {
+        padding: 1.5rem;
+        overflow-x: auto;
+    }
+
+    .card table {
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        white-space: nowrap;
+        min-width: 500px;
+    }
+
     table {
-        font-size: 0.875rem;
+        font-size: 0.85rem;
     }
 
     th, td {
-        padding: 0.5rem;
+        padding: 0.75rem 0.5rem;
+    }
+
+    .btn {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.75rem;
+    }
+}
+
+/* Extra small devices */
+@media (max-width: 480px) {
+    .container {
+        padding: 0 0.5rem;
+    }
+
+    .navbar {
+        padding: 0.8rem 0.5rem;
+    }
+
+    .card {
+        padding: 1rem;
+        overflow-x: auto;
+    }
+
+    .card table {
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        min-width: 450px;
+    }
+
+    table {
+        font-size: 0.75rem;
+    }
+
+    th, td {
+        padding: 0.5rem 0.3rem;
+    }
+
+    .btn {
+        padding: 0.3rem 0.5rem;
+        font-size: 0.65rem;
+        margin: 0.2rem;
+    }
+
+    .section h2 {
+        font-size: 1.3rem;
+        margin-bottom: 1rem;
     }
 }
 
