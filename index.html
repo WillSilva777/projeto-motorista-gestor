@@ -8,23 +8,21 @@
 </head>
 <body>
     <div class="container">
-        <!-- Navegação -->
         <nav class="navbar">
-            <h1 class="logo">🚗 Motorista Gestor</h1>
+            <h1 class="logo">Motorista Gestor</h1>
             <ul class="nav-links">
-                <li><a href="#dashboard" class="nav-link active" onclick="showSection('dashboard')">Dashboard</a></li>
-                <li><a href="#sessoes" class="nav-link" onclick="showSection('sessoes')">Sessões</a></li>
-                <li><a href="#despesas" class="nav-link" onclick="showSection('despesas')">Despesas</a></li>
-                <li><a href="#relatorios" class="nav-link" onclick="showSection('relatorios')">Relatórios</a></li>
-                <li><a href="#manutencao" class="nav-link" onclick="showSection('manutencao')">Manutenção</a></li>
-                <li><a href="#configuracoes" class="nav-link" onclick="showSection('configuracoes')">Configurações</a></li>
+                <li><a href="#dashboard" class="nav-link active" onclick="showSection('dashboard', this); return false;">Dashboard</a></li>
+                <li><a href="#sessoes" class="nav-link" onclick="showSection('sessoes', this); return false;">Sessoes</a></li>
+                <li><a href="#despesas" class="nav-link" onclick="showSection('despesas', this); return false;">Despesas</a></li>
+                <li><a href="#relatorios" class="nav-link" onclick="showSection('relatorios', this); return false;">Relatorios</a></li>
+                <li><a href="#manutencao" class="nav-link" onclick="showSection('manutencao', this); return false;">Manutencao</a></li>
+                <li><a href="#configuracoes" class="nav-link" onclick="showSection('configuracoes', this); return false;">Configuracoes</a></li>
             </ul>
         </nav>
 
-        <!-- DASHBOARD -->
         <section id="dashboard" class="section active">
             <h2>Dashboard</h2>
-            
+
             <div class="stats-grid">
                 <div class="stat-card">
                     <p class="stat-label">Saldo Hoje</p>
@@ -50,7 +48,7 @@
                     <p class="stat-value" id="ganhoSemana">R$ 0,00</p>
                 </div>
                 <div class="stat-card">
-                    <p class="stat-label">Ganho Mês</p>
+                    <p class="stat-label">Ganho Mes</p>
                     <p class="stat-value" id="ganhoMes">R$ 0,00</p>
                 </div>
                 <div class="stat-card">
@@ -58,7 +56,7 @@
                     <p class="stat-value danger" id="despesasTotal">R$ 0,00</p>
                 </div>
                 <div class="stat-card">
-                    <p class="stat-label">Lucro Líquido</p>
+                    <p class="stat-label">Lucro Liquido</p>
                     <p class="stat-value" id="lucroLiquido">R$ 0,00</p>
                 </div>
             </div>
@@ -72,16 +70,16 @@
                             <div class="progress-bar">
                                 <div id="progressFillGross" class="progress-fill" style="width: 0%"></div>
                             </div>
-                            <p id="progressTextGross">0% - R$ 0,00 / R$ 6000,00</p>
+                            <p id="progressTextGross">0% - R$ 0,00 / R$ 6.000,00</p>
                         </div>
                     </div>
                     <div class="progress-item">
-                        <p class="progress-label">Meta Mensal Líquida</p>
+                        <p class="progress-label">Meta Mensal Liquida</p>
                         <div class="progress-container">
                             <div class="progress-bar">
                                 <div id="progressFillNet" class="progress-fill" style="width: 0%"></div>
                             </div>
-                            <p id="progressTextNet">0% - R$ 0,00 / R$ 4500,00</p>
+                            <p id="progressTextNet">0% - R$ 0,00 / R$ 4.500,00</p>
                         </div>
                     </div>
                 </div>
@@ -96,16 +94,16 @@
                             <div class="progress-bar">
                                 <div id="progressFillGrossWeekly" class="progress-fill" style="width: 0%"></div>
                             </div>
-                            <p id="progressTextGrossWeekly">0% - R$ 0,00 / R$ 1500,00</p>
+                            <p id="progressTextGrossWeekly">0% - R$ 0,00 / R$ 1.500,00</p>
                         </div>
                     </div>
                     <div class="progress-item">
-                        <p class="progress-label">Meta Semanal Líquida</p>
+                        <p class="progress-label">Meta Semanal Liquida</p>
                         <div class="progress-container">
                             <div class="progress-bar">
                                 <div id="progressFillNetWeekly" class="progress-fill" style="width: 0%"></div>
                             </div>
-                            <p id="progressTextNetWeekly">0% - R$ 0,00 / R$ 1000,00</p>
+                            <p id="progressTextNetWeekly">0% - R$ 0,00 / R$ 1.000,00</p>
                         </div>
                     </div>
                 </div>
@@ -113,23 +111,23 @@
 
             <div class="card">
                 <h3>Ganhos por Dia da Semana</h3>
-                <canvas id="weeklyEarningsChart" height="80"></canvas>
+                <canvas id="weeklyEarningsChart"></canvas>
             </div>
 
             <div class="stats-grid">
                 <div class="card" id="statusManutencao">
-                    <h3>🔧 Status Manutenção</h3>
-                    <p style="color: #22c55e;">✅ Tudo em dia</p>
+                    <h3>Status Manutencao</h3>
+                    <p style="color: #22c55e;">Tudo em dia</p>
                 </div>
                 <div class="card" id="proximasManutencoes">
-                    <h3>⏰ Próximas Manutenções</h3>
-                    <p style="color: #f59e0b;">Nenhuma próxima</p>
+                    <h3>Proximas Manutencoes</h3>
+                    <p style="color: #22c55e;">Nenhuma proxima</p>
                 </div>
             </div>
 
             <div class="card">
-                <h3>Últimas Sessões</h3>
-                <table id="ultimasSecoeosTable">
+                <h3>Ultimas Sessoes</h3>
+                <table>
                     <thead>
                         <tr>
                             <th>Data</th>
@@ -141,16 +139,15 @@
                         </tr>
                     </thead>
                     <tbody id="ultimasSecoesBody">
-                        <tr><td colspan="6" class="empty">Nenhuma sessão registrada</td></tr>
+                        <tr><td colspan="6" class="empty">Nenhuma sessao registrada</td></tr>
                     </tbody>
                 </table>
             </div>
         </section>
 
-        <!-- SESSÕES DE TRABALHO -->
         <section id="sessoes" class="section">
-            <h2>Registrar Sessão de Trabalho</h2>
-            
+            <h2>Registrar Sessao de Trabalho</h2>
+
             <div class="card form-card">
                 <form id="formSessao" onsubmit="adicionarSessao(event)">
                     <div class="form-group">
@@ -187,21 +184,21 @@
 
                     <div class="form-group">
                         <label>Valor Total Ganho (R$):</label>
-                        <input type="number" id="valorTotal" step="0.01" placeholder="0.00" required>
+                        <input type="number" id="valorTotal" step="0.01" min="0.01" placeholder="0.00" required>
                     </div>
 
                     <div class="form-group">
-                        <label>Distância Total (km):</label>
-                        <input type="number" id="distanciaTotal" step="0.1" placeholder="0.0" required>
+                        <label>Distancia Total (km):</label>
+                        <input type="number" id="distanciaTotal" step="0.1" min="0.1" placeholder="0.0" required>
                     </div>
 
-                    <button type="submit" class="btn btn-primary">Registrar Sessão</button>
+                    <button type="submit" class="btn btn-primary">Registrar Sessao</button>
                 </form>
             </div>
 
             <div class="card">
-                <h3>Histórico de Sessões</h3>
-                <table id="todasSecoesTable">
+                <h3>Historico de Sessoes</h3>
+                <table>
                     <thead>
                         <tr>
                             <th>Data</th>
@@ -215,16 +212,15 @@
                         </tr>
                     </thead>
                     <tbody id="todasSecoesBody">
-                        <tr><td colspan="8" class="empty">Nenhuma sessão registrada</td></tr>
+                        <tr><td colspan="8" class="empty">Nenhuma sessao registrada</td></tr>
                     </tbody>
                 </table>
             </div>
         </section>
 
-        <!-- DESPESAS -->
         <section id="despesas" class="section">
             <h2>Registrar Despesa</h2>
-            
+
             <div class="card form-card">
                 <form id="formDespesa" onsubmit="adicionarDespesa(event)">
                     <div class="form-group">
@@ -236,22 +232,22 @@
                         <label>Categoria:</label>
                         <select id="categoria" required>
                             <option value="">Selecione...</option>
-                            <option value="Combustível">Combustível</option>
-                            <option value="Alimentação">Alimentação</option>
-                            <option value="Lavação">Lavação</option>
-                            <option value="Pedágio">Pedágio</option>
+                            <option value="Combustivel">Combustivel</option>
+                            <option value="Alimentacao">Alimentacao</option>
+                            <option value="Lavacao">Lavacao</option>
+                            <option value="Pedagio">Pedagio</option>
                             <option value="Outro">Outro</option>
                         </select>
                     </div>
 
                     <div class="form-group">
                         <label>Valor (R$):</label>
-                        <input type="number" id="valorDespesa" step="0.01" required placeholder="0.00">
+                        <input type="number" id="valorDespesa" step="0.01" min="0.01" required placeholder="0.00">
                     </div>
 
                     <div class="form-group">
-                        <label>Descrição:</label>
-                        <input type="text" id="descricaoDespesa" placeholder="Ex: Troca de óleo">
+                        <label>Descricao:</label>
+                        <input type="text" id="descricaoDespesa" placeholder="Ex: Troca de oleo">
                     </div>
 
                     <button type="submit" class="btn btn-primary">Registrar Despesa</button>
@@ -260,12 +256,12 @@
 
             <div class="card">
                 <h3>Todas as Despesas</h3>
-                <table id="todasDespesasTable">
+                <table>
                     <thead>
                         <tr>
                             <th>Data</th>
                             <th>Categoria</th>
-                            <th>Descrição</th>
+                            <th>Descricao</th>
                             <th>Valor</th>
                             <th>Ações</th>
                         </tr>
@@ -277,11 +273,9 @@
             </div>
         </section>
 
-        <!-- RELATÓRIOS -->
         <section id="relatorios" class="section">
-            <h2>Relatórios</h2>
-            
-            <!-- Filtros de Período -->
+            <h2>Relatorios</h2>
+
             <div class="card filter-card">
                 <div class="filter-group">
                     <div class="filter-item">
@@ -291,12 +285,12 @@
                         </select>
                     </div>
                     <div class="filter-item">
-                        <label>Selecionar Mês:</label>
+                        <label>Selecionar Mes:</label>
                         <select id="filtroMes" onchange="atualizarRelatorios()">
                             <option value="">Todos os meses</option>
                             <option value="1">Janeiro</option>
                             <option value="2">Fevereiro</option>
-                            <option value="3">Março</option>
+                            <option value="3">Marco</option>
                             <option value="4">Abril</option>
                             <option value="5">Maio</option>
                             <option value="6">Junho</option>
@@ -310,7 +304,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="stats-grid">
                 <div class="stat-card">
                     <p class="stat-label">Ganho Total</p>
@@ -318,14 +312,14 @@
                 </div>
                 <div class="stat-card">
                     <p class="stat-label">Horas Totais</p>
-                    <p class="stat-value" id="horasTotaisRel">0h</p>
+                    <p class="stat-value" id="horasTotaisRel">0h 0m</p>
                 </div>
                 <div class="stat-card">
-                    <p class="stat-label">Sessões Totais</p>
+                    <p class="stat-label">Sessoes Totais</p>
                     <p class="stat-value" id="sessoesTotaisRel">0</p>
                 </div>
                 <div class="stat-card">
-                    <p class="stat-label">Ganho Médio/h</p>
+                    <p class="stat-label">Ganho Medio/h</p>
                     <p class="stat-value" id="ganhoMedioHoraRel">R$ 0,00</p>
                 </div>
             </div>
@@ -336,7 +330,7 @@
                     <p class="stat-value danger" id="despesasRel">R$ 0,00</p>
                 </div>
                 <div class="stat-card">
-                    <p class="stat-label">Lucro Líquido</p>
+                    <p class="stat-label">Lucro Liquido</p>
                     <p class="stat-value" id="lucroLiquidoRel">R$ 0,00</p>
                 </div>
                 <div class="stat-card">
@@ -344,7 +338,7 @@
                     <p class="stat-value" id="corridasTotaisRel">0</p>
                 </div>
                 <div class="stat-card">
-                    <p class="stat-label">Distância Total</p>
+                    <p class="stat-label">Distancia Total</p>
                     <p class="stat-value" id="distanciaTotalRel">0 km</p>
                 </div>
             </div>
@@ -355,7 +349,7 @@
                     <p class="stat-value" id="ganhoKmRel">R$ 0,00</p>
                 </div>
                 <div class="stat-card">
-                    <p class="stat-label">Custo Combustível/KM</p>
+                    <p class="stat-label">Custo Combustivel/KM</p>
                     <p class="stat-value" id="custoCombustivelKmRel">R$ 0,00</p>
                 </div>
                 <div class="stat-card">
@@ -363,7 +357,7 @@
                     <p class="stat-value" id="lucroRealKmRel">R$ 0,00</p>
                 </div>
                 <div class="stat-card">
-                    <p class="stat-label">Eficiência</p>
+                    <p class="stat-label">Eficiencia</p>
                     <p class="stat-value" id="eficienciaRel">0%</p>
                 </div>
             </div>
@@ -379,54 +373,53 @@
             </div>
         </section>
 
-        <!-- MANUTENÇÃO DO VEÍCULO -->
         <section id="manutencao" class="section">
-            <h2>Manutenção do Veículo</h2>
-            
+            <h2>Manutencao do Veiculo</h2>
+
             <div class="card form-card">
-                <h3>Registrar Manutenção</h3>
-                
+                <h3>Registrar Manutencao</h3>
+
                 <form id="formManutencao" onsubmit="adicionarManutencao(event)">
                     <div class="form-group">
                         <label>Data:</label>
                         <input type="date" id="dataManutencao" required>
                     </div>
-                    
+
                     <div class="form-group">
-                        <label>Tipo de Manutenção:</label>
+                        <label>Tipo de Manutencao:</label>
                         <select id="tipoManutencao" required>
                             <option value="">Selecione...</option>
-                            <option value="Troca de Óleo">Troca de Óleo</option>
+                            <option value="Troca de Oleo">Troca de Oleo</option>
                             <option value="Pneu">Pneu</option>
                             <option value="Filtro">Filtro</option>
-                            <option value="Revisão">Revisão</option>
+                            <option value="Revisao">Revisao</option>
                             <option value="Freios">Freios</option>
                             <option value="Outro">Outro</option>
                         </select>
                     </div>
-                    
+
                     <div class="form-group">
                         <label>Valor (R$):</label>
-                        <input type="number" id="valorManutencao" step="0.01" min="0" placeholder="0.00" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Quilometragem (km):</label>
-                        <input type="number" id="quilometragemManutencao" min="0" placeholder="0" required>
+                        <input type="number" id="valorManutencao" step="0.01" min="0.01" placeholder="0.00" required>
                     </div>
 
                     <div class="form-group">
-                        <label>Descrição (opcional):</label>
-                        <input type="text" id="descricaoManutencao" placeholder="Ex: Troca de óleo sintético...">
+                        <label>Quilometragem (km):</label>
+                        <input type="number" id="quilometragemManutencao" min="1" placeholder="0" required>
                     </div>
-                    
-                    <button type="submit" class="btn btn-primary">Registrar Manutenção</button>
+
+                    <div class="form-group">
+                        <label>Descricao (opcional):</label>
+                        <input type="text" id="descricaoManutencao" placeholder="Ex: Troca de oleo sintetico">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Registrar Manutencao</button>
                 </form>
             </div>
-            
+
             <div class="card">
-                <h3>Histórico de Manutenções</h3>
-                <table id="todasManutecoesTable">
+                <h3>Historico de Manutencoes</h3>
+                <table>
                     <thead>
                         <tr>
                             <th>Data</th>
@@ -437,69 +430,68 @@
                         </tr>
                     </thead>
                     <tbody id="todasManutecoesBody">
-                        <tr><td colspan="5" class="empty">Nenhuma manutenção registrada</td></tr>
+                        <tr><td colspan="5" class="empty">Nenhuma manutencao registrada</td></tr>
                     </tbody>
                 </table>
             </div>
         </section>
 
-        <!-- CONFIGURAÇÕES -->
         <section id="configuracoes" class="section">
-            <h2>Configurações</h2>
-            
+            <h2>Configuracoes</h2>
+
             <div class="card form-card">
-                <h3>Configurações Financeiras</h3>
-                
+                <h3>Configuracoes Financeiras</h3>
+
                 <form id="formConfiguracoes">
                     <div class="form-group">
                         <label>Meta Mensal Bruta (R$)</label>
                         <input type="number" id="monthlyGoalGross" step="0.01" min="0" placeholder="0.00" required>
-                        <p class="form-hint">Renda bruta mensal almejada</p>
+                        <p class="form-hint">Renda bruta mensal almejada.</p>
                     </div>
 
                     <div class="form-group">
-                        <label>Meta Mensal Líquida (R$)</label>
+                        <label>Meta Mensal Liquida (R$)</label>
                         <input type="number" id="monthlyGoalNet" step="0.01" min="0" placeholder="0.00" required>
-                        <p class="form-hint">Lucro líquido mensal almejado</p>
+                        <p class="form-hint">Lucro liquido mensal almejado.</p>
                     </div>
 
                     <div class="form-group">
                         <label>Meta Semanal Bruta (R$)</label>
                         <input type="number" id="weeklyGoalGross" step="0.01" min="0" placeholder="0.00" required>
-                        <p class="form-hint">Renda bruta semanal almejada</p>
+                        <p class="form-hint">Renda bruta semanal almejada.</p>
                     </div>
 
                     <div class="form-group">
-                        <label>Meta Semanal Líquida (R$)</label>
+                        <label>Meta Semanal Liquida (R$)</label>
                         <input type="number" id="weeklyGoalNet" step="0.01" min="0" placeholder="0.00" required>
-                        <p class="form-hint">Lucro líquido semanal almejado</p>
+                        <p class="form-hint">Lucro liquido semanal almejado.</p>
                     </div>
 
                     <div class="form-group">
-                        <label>Preço Médio do Combustível (R$)</label>
+                        <label>Preco Medio do Combustivel (R$)</label>
                         <input type="number" id="fuelPrice" step="0.01" min="0" placeholder="0.00" required>
-                        <p class="form-hint">Preço médio pago por litro</p>
+                        <p class="form-hint">Preco medio pago por litro.</p>
                     </div>
 
                     <div class="form-group">
                         <label>Consumo do Carro (km/l)</label>
-                        <input type="number" id="carConsumption" step="0.1" min="0" placeholder="0.0" required>
-                        <p class="form-hint">Quantos quilômetros o carro faz por litro</p>
+                        <input type="number" id="carConsumption" step="0.1" min="0.1" placeholder="0.0" required>
+                        <p class="form-hint">Quantos quilometros o carro faz por litro.</p>
                     </div>
 
-                    <button type="button" onclick="saveSettings()" class="btn btn-primary">💾 Salvar Configurações</button>
+                    <button type="button" onclick="saveSettings()" class="btn btn-primary">Salvar Configuracoes</button>
                 </form>
             </div>
 
             <div class="card">
-                <h3>Resumo das Configurações Atuais</h3>
+                <h3>Resumo das Configuracoes Atuais</h3>
                 <div class="settings-summary">
                     <div class="summary-item">
                         <span class="summary-label">Meta Mensal Bruta:</span>
                         <span class="summary-value" id="summaryGoalGross">R$ 0,00</span>
                     </div>
                     <div class="summary-item">
-                        <span class="summary-label">Meta Mensal Líquida:</span>
+                        <span class="summary-label">Meta Mensal Liquida:</span>
                         <span class="summary-value" id="summaryGoalNet">R$ 0,00</span>
                     </div>
                     <div class="summary-item">
@@ -507,11 +499,11 @@
                         <span class="summary-value" id="summaryGoalGrossWeekly">R$ 0,00</span>
                     </div>
                     <div class="summary-item">
-                        <span class="summary-label">Meta Semanal Líquida:</span>
+                        <span class="summary-label">Meta Semanal Liquida:</span>
                         <span class="summary-value" id="summaryGoalNetWeekly">R$ 0,00</span>
                     </div>
                     <div class="summary-item">
-                        <span class="summary-label">Preço Combustível:</span>
+                        <span class="summary-label">Preco Combustivel:</span>
                         <span class="summary-value" id="summaryFuelPrice">R$ 0,00</span>
                     </div>
                     <div class="summary-item">
@@ -519,17 +511,40 @@
                         <span class="summary-value" id="summaryCarConsumption">0,0 km/l</span>
                     </div>
                     <div class="summary-item">
-                        <span class="summary-label">Custo Combustível/KM:</span>
+                        <span class="summary-label">Custo Combustivel/KM:</span>
                         <span class="summary-value" id="summaryCostPerKmFuel">R$ 0,00</span>
                     </div>
                 </div>
             </div>
-                </table>
+
+            <div class="card">
+                <h3>Backup Local</h3>
+                <p class="form-hint">Exporte um JSON para guardar seus dados no dispositivo ou importe um backup para restaurar o app.</p>
+
+                <div class="backup-actions">
+                    <button type="button" class="btn btn-primary" onclick="exportBackup()">Exportar Backup JSON</button>
+                    <button type="button" class="btn btn-secondary" onclick="openBackupFilePicker()">Importar Backup JSON</button>
+                </div>
+
+                <input type="file" id="backupFileInput" accept="application/json" onchange="handleBackupFileChange(event)" hidden>
+
+                <div class="backup-meta">
+                    <p id="backupStorageMode">Armazenamento atual: -</p>
+                    <p id="backupSummaryCounts">Sessoes: 0 | Despesas: 0 | Manutencoes: 0</p>
+                    <p id="backupStatus">Nenhuma operacao de backup executada.</p>
+                </div>
             </div>
         </section>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="src/services/storage-service.js"></script>
+    <script src="src/services/settings-service.js"></script>
+    <script src="src/services/session-service.js"></script>
+    <script src="src/services/expense-service.js"></script>
+    <script src="src/services/maintenance-service.js"></script>
+    <script src="src/services/report-service.js"></script>
+    <script src="src/services/chart-service.js"></script>
+    <script src="src/services/backup-service.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

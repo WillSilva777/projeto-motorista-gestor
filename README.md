@@ -1,111 +1,143 @@
-# 🚗 Motorista Gestor - Versão Simples
+# Motorista Gestor
 
-Um app leve e responsivo para motoristas de aplicativos controlarem ganhos e despesas.
+Aplicativo web local-first para controle de ganhos, despesas e manutencoes de motoristas. O projeto roda no navegador, grava os dados no dispositivo do usuario e continua leve porque nao depende de backend, build complexo ou bibliotecas grandes.
 
-**Sem dependências externas. Só HTML, CSS e JavaScript puro!**
+## O que mudou
 
-## 🚀 Como Usar
+O app foi reorganizado para usar uma camada de servicos locais em `src/services/` e uma persistencia centralizada. A interface continua simples em HTML, CSS e JavaScript puro, mas agora a logica esta separada por responsabilidade.
 
-1. Abra `index.html` no navegador
-2. Pronto! Comece a registrar suas corridas e despesas
+## Por que essa arquitetura foi usada
 
-## 📱 Funcionalidades
+- `IndexedDB` foi adotado como armazenamento principal porque guarda mais dados que `localStorage`, funciona no dispositivo do usuario e e mais adequado para crescimento do app sem precisar de servidor.
+- `localStorage` foi mantido como fallback para compatibilidade e migracao dos dados antigos ja existentes no navegador.
+- Uma camada de servicos foi criada para separar persistencia, regras de negocio, relatorios e renderizacao do grafico. Isso deixa o codigo mais facil de manter e reduz risco de bugs por logica duplicada.
+- O grafico foi refeito em `canvas` local, removendo a dependencia de `Chart.js` via CDN. Com isso o app fica mais leve e funciona melhor sem internet.
+- A interface principal continua em arquivos estaticos para manter o carregamento rapido e a distribuicao simples.
 
-- ✅ **Dashboard**: Veja seu ganho do dia, semana e mês
-- ✅ **Registrar Corridas**: Adicione cada corrida com plataforma e valor
-- ✅ **Registrar Despesas**: Controle todas as despesas
-- ✅ **Cálculo Automático**: Combustível é calculado automaticamente (5.5/L, 8km/L)
-- ✅ **Relatórios**: Veja ganhos por plataforma e despesas por categoria
-- ✅ **Offline**: Dados salvos no seu navegador com LocalStorage
+## Estrutura do Projeto
 
-## 📁 Arquivos
-
+```text
+index.html
+styles.css
+app.js
+src/
+  services/
+    storage-service.js
+    settings-service.js
+    session-service.js
+    expense-service.js
+    maintenance-service.js
+    report-service.js
+    chart-service.js
+    backup-service.js
 ```
-index.html    → Interface HTML
-styles.css    → Estilos (dark mode)
-app.js        → Toda a lógica JavaScript
-```
 
-## 🎨 Cores
+## Responsabilidade de Cada Arquivo
 
-- Verde (#22c55e) - Ganhos
-- Azul (#0ea5e9) - Secundário
-- Vermelho (#ef4444) - Despesas
-- Fundo escuro (#0a0e27) - Theme dark
+- `index.html`: estrutura das telas, formularios, tabelas e navegacao.
+- `styles.css`: tema escuro, responsividade e componentes visuais.
+- `app.js`: camada de interface, eventos, preenchimento dos formularios e atualizacao da tela.
+- `src/services/storage-service.js`: persistencia local com `IndexedDB` e fallback para `localStorage`.
+- `src/services/settings-service.js`: leitura, saneamento e gravacao das configuracoes financeiras.
+- `src/services/session-service.js`: CRUD e calculos das sessoes.
+- `src/services/expense-service.js`: CRUD das despesas.
+- `src/services/maintenance-service.js`: CRUD das manutencoes.
+- `src/services/report-service.js`: regras do dashboard, relatorios, filtros, metas e alertas.
+- `src/services/chart-service.js`: desenho do grafico semanal direto em `canvas`.
+- `src/services/backup-service.js`: exportacao e importacao de backup local em JSON.
 
-## 💾 Dados
+## Funcionalidades Atuais
 
-Os dados são salvos no **LocalStorage** do seu navegador:
-- Não é necessário banco de dados
-- Dados permanecem mesmo após fechar o navegador
-- Use de qualquer dispositivo (mobile, tablet, PC)
+- Dashboard com saldo do dia, horas trabalhadas, total de corridas, ganho por hora, ganho semanal, ganho mensal, despesas e lucro liquido.
+- Metas mensais e semanais com barras de progresso.
+- Grafico local de ganhos por dia da semana.
+- Cadastro, edicao e exclusao de sessoes.
+- Cadastro, edicao e exclusao de despesas.
+- Cadastro, edicao e exclusao de manutencoes.
+- Relatorios com filtro por ano e mes.
+- Resumo por plataforma e por categoria.
+- Configuracoes de metas e custo de combustivel.
+- Alertas de manutencao vencida e proxima.
+- Exportacao de backup local em JSON.
+- Importacao de backup local em JSON com restauracao completa dos dados.
 
-## 📊 Cálculo de Combustível
+## Persistencia
 
-Padrão: **R$ 5.50 / litro** e **8 km/litro**
+Armazenamento principal:
 
-Se você rodou 16km:
-- Combustível gasto: 2 litros
-- Custo: R$ 11.00
+- `IndexedDB`, banco `motorista-gestor`
 
-Customize alterando os valores em `app.js` (linhas 89-90).
+Stores usadas:
 
-## 🔧 Customizar
+- `sessoes`
+- `despesas`
+- `manutencoes`
+- `settings`
 
-### Mudar custo de combustível
-No arquivo `app.js`, encontre a linha:
+Fallback legado:
+
+- `localStorage` com as chaves `sessoes`, `despesas`, `manutencoes` e `appSettings`
+
+O app tenta carregar do `IndexedDB` primeiro. Se o navegador nao suportar ou ocorrer erro na abertura, ele usa `localStorage`. Se existirem dados antigos no `localStorage`, eles sao migrados para o `IndexedDB` quando possivel.
+
+## Backup Local em JSON
+
+O backup foi implementado em JSON por quatro motivos:
+
+- continua 100% local, sem enviar dados para nenhum servidor
+- e um formato simples de ler, validar e restaurar
+- permite ao usuario guardar uma copia dos dados em qualquer pasta ou dispositivo
+- facilita manutencao futura porque a estrutura exportada e a mesma que o app usa internamente
+
+O fluxo atual funciona assim:
+
+- `Exportar Backup JSON`: gera um arquivo com sessoes, despesas, manutencoes, configuracoes e metadados do backup
+- `Importar Backup JSON`: le um arquivo local e substitui o estado salvo no dispositivo apos confirmacao do usuario
+
+Essa escolha foi usada no lugar de sincronizacao online porque o objetivo do projeto continua sendo leveza, simplicidade e funcionamento direto no dispositivo do usuario.
+
+## Configuracoes Padrao
+
+- Meta mensal bruta: `6000`
+- Meta mensal liquida: `4500`
+- Meta semanal bruta: `1500`
+- Meta semanal liquida: `1000`
+- Preco medio do combustivel: `5.79`
+- Consumo do carro: `11 km/l`
+
+## Como Executar
+
+1. Abra `index.html` no navegador.
+2. Preencha sessoes, despesas, manutencoes e configuracoes.
+
+Nao existe etapa de build obrigatoria.
+
+## Dependencias
+
+O projeto nao usa dependencias externas carregadas por CDN nem gerenciador de pacotes. Tudo necessario para a execucao esta no repositorio.
+
+## Vantagens Dessa Implementacao
+
+- Funciona no dispositivo do usuario.
+- Mantem os dados locais, sem servidor.
+- Continua leve e rapido para abrir.
+- Fica mais facil evoluir o app sem acoplar a interface a persistencia.
+- Permite crescer de forma segura sem trocar toda a base.
+
+## Limpeza de Dados
+
+Para limpar todos os dados locais do app no navegador:
+
 ```javascript
-const combustivel = (distancia / 8) * 5.5;
+localStorage.removeItem('sessoes')
+localStorage.removeItem('despesas')
+localStorage.removeItem('manutencoes')
+localStorage.removeItem('appSettings')
+indexedDB.deleteDatabase('motorista-gestor')
 ```
 
-Troque `8` (km/litro) e `5.5` (R$/litro) pelos seus valores.
+## Observacoes
 
-### Mudar meta mensal
-No arquivo `app.js`, procure por:
-```javascript
-let metaMensal = parseFloat(localStorage.getItem('metaMensal')) || 5000;
-```
-
-Troque `5000` pela sua meta.
-
-## 📱 Responsivo
-
-Funciona perfeito em:
-- 📱 Celular (principal)
-- 📱 Tablet
-- 💻 PC/Notebook
-
-## ⚡ Performance
-
-- **Muito leve**: Menos de 50KB total
-- **Rápido**: Carrega em milissegundos
-- **Offline**: Funciona sem internet
-- **Seguro**: Dados ficam no seu navegador
-
-## 🐛 Problemas?
-
-### Dados desapareceram
-- Verifique se não limpou o histórico/cache do navegador
-- LocalStorage pode ser limpo em navegação privada
-
-### Como limpar dados
-Abra o console (F12) e execute:
-```javascript
-localStorage.clear()
-```
-
-## 📈 Próximos Passos
-
-Quer adicionar algo? Ideias:
-- [ ] Exportar dados (CSV/PDF)
-- [ ] Fazer backup
-- [ ] Integrar com Google Sheets
-- [ ] App mobile nativa
-
-## 📄 Licença
-
-Livre para usar e modificar!
-
----
-
-**Desenvolvido para motoristas de aplicativos** 🚗💨
+- O projeto continua sem backend e sem testes automatizados.
+- A pasta `src/services` agora faz parte da execucao real do app.
+- O `app.js` virou uma camada de interface, enquanto as regras principais foram movidas para os servicos.
