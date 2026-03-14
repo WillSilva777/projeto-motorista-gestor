@@ -192,7 +192,9 @@ body {
 }
 
 #progressTextGross,
-#progressTextNet {
+#progressTextNet,
+#progressTextGrossWeekly,
+#progressTextNetWeekly {
     color: var(--text-secondary);
     text-align: center;
     font-size: 0.875rem;

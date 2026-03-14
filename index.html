@@ -16,6 +16,7 @@
                 <li><a href="#sessoes" class="nav-link" onclick="showSection('sessoes')">Sessões</a></li>
                 <li><a href="#despesas" class="nav-link" onclick="showSection('despesas')">Despesas</a></li>
                 <li><a href="#relatorios" class="nav-link" onclick="showSection('relatorios')">Relatórios</a></li>
+                <li><a href="#manutencao" class="nav-link" onclick="showSection('manutencao')">Manutenção</a></li>
                 <li><a href="#configuracoes" class="nav-link" onclick="showSection('configuracoes')">Configurações</a></li>
             </ul>
         </nav>
@@ -87,8 +88,43 @@
             </div>
 
             <div class="card">
+                <h3>Metas Semanais</h3>
+                <div class="progress-section">
+                    <div class="progress-item">
+                        <p class="progress-label">Meta Semanal Bruta</p>
+                        <div class="progress-container">
+                            <div class="progress-bar">
+                                <div id="progressFillGrossWeekly" class="progress-fill" style="width: 0%"></div>
+                            </div>
+                            <p id="progressTextGrossWeekly">0% - R$ 0,00 / R$ 1500,00</p>
+                        </div>
+                    </div>
+                    <div class="progress-item">
+                        <p class="progress-label">Meta Semanal Líquida</p>
+                        <div class="progress-container">
+                            <div class="progress-bar">
+                                <div id="progressFillNetWeekly" class="progress-fill" style="width: 0%"></div>
+                            </div>
+                            <p id="progressTextNetWeekly">0% - R$ 0,00 / R$ 1000,00</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
                 <h3>Ganhos por Dia da Semana</h3>
                 <canvas id="weeklyEarningsChart" height="80"></canvas>
+            </div>
+
+            <div class="stats-grid">
+                <div class="card" id="statusManutencao">
+                    <h3>🔧 Status Manutenção</h3>
+                    <p style="color: #22c55e;">✅ Tudo em dia</p>
+                </div>
+                <div class="card" id="proximasManutencoes">
+                    <h3>⏰ Próximas Manutenções</h3>
+                    <p style="color: #f59e0b;">Nenhuma próxima</p>
+                </div>
             </div>
 
             <div class="card">
@@ -201,7 +237,6 @@
                         <select id="categoria" required>
                             <option value="">Selecione...</option>
                             <option value="Combustível">Combustível</option>
-                            <option value="Manutenção">Manutenção</option>
                             <option value="Alimentação">Alimentação</option>
                             <option value="Lavação">Lavação</option>
                             <option value="Pedágio">Pedágio</option>
@@ -344,6 +379,70 @@
             </div>
         </section>
 
+        <!-- MANUTENÇÃO DO VEÍCULO -->
+        <section id="manutencao" class="section">
+            <h2>Manutenção do Veículo</h2>
+            
+            <div class="card form-card">
+                <h3>Registrar Manutenção</h3>
+                
+                <form id="formManutencao" onsubmit="adicionarManutencao(event)">
+                    <div class="form-group">
+                        <label>Data:</label>
+                        <input type="date" id="dataManutencao" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Tipo de Manutenção:</label>
+                        <select id="tipoManutencao" required>
+                            <option value="">Selecione...</option>
+                            <option value="Troca de Óleo">Troca de Óleo</option>
+                            <option value="Pneu">Pneu</option>
+                            <option value="Filtro">Filtro</option>
+                            <option value="Revisão">Revisão</option>
+                            <option value="Freios">Freios</option>
+                            <option value="Outro">Outro</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Valor (R$):</label>
+                        <input type="number" id="valorManutencao" step="0.01" min="0" placeholder="0.00" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Quilometragem (km):</label>
+                        <input type="number" id="quilometragemManutencao" min="0" placeholder="0" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Descrição (opcional):</label>
+                        <input type="text" id="descricaoManutencao" placeholder="Ex: Troca de óleo sintético...">
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Registrar Manutenção</button>
+                </form>
+            </div>
+            
+            <div class="card">
+                <h3>Histórico de Manutenções</h3>
+                <table id="todasManutecoesTable">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Tipo</th>
+                            <th>Valor</th>
+                            <th>KM</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="todasManutecoesBody">
+                        <tr><td colspan="5" class="empty">Nenhuma manutenção registrada</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
         <!-- CONFIGURAÇÕES -->
         <section id="configuracoes" class="section">
             <h2>Configurações</h2>
@@ -362,6 +461,18 @@
                         <label>Meta Mensal Líquida (R$)</label>
                         <input type="number" id="monthlyGoalNet" step="0.01" min="0" placeholder="0.00" required>
                         <p class="form-hint">Lucro líquido mensal almejado</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Meta Semanal Bruta (R$)</label>
+                        <input type="number" id="weeklyGoalGross" step="0.01" min="0" placeholder="0.00" required>
+                        <p class="form-hint">Renda bruta semanal almejada</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Meta Semanal Líquida (R$)</label>
+                        <input type="number" id="weeklyGoalNet" step="0.01" min="0" placeholder="0.00" required>
+                        <p class="form-hint">Lucro líquido semanal almejado</p>
                     </div>
 
                     <div class="form-group">
@@ -392,6 +503,14 @@
                         <span class="summary-value" id="summaryGoalNet">R$ 0,00</span>
                     </div>
                     <div class="summary-item">
+                        <span class="summary-label">Meta Semanal Bruta:</span>
+                        <span class="summary-value" id="summaryGoalGrossWeekly">R$ 0,00</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Meta Semanal Líquida:</span>
+                        <span class="summary-value" id="summaryGoalNetWeekly">R$ 0,00</span>
+                    </div>
+                    <div class="summary-item">
                         <span class="summary-label">Preço Combustível:</span>
                         <span class="summary-value" id="summaryFuelPrice">R$ 0,00</span>
                     </div>
@@ -404,6 +523,8 @@
                         <span class="summary-value" id="summaryCostPerKmFuel">R$ 0,00</span>
                     </div>
                 </div>
+            </div>
+                </table>
             </div>
         </section>
     </div>

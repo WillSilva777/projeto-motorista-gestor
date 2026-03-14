@@ -9,6 +9,8 @@ let weeklyEarningsChartInstance = null;
 let appSettings = JSON.parse(localStorage.getItem('appSettings')) || {
     monthly_goal_gross: 6000,
     monthly_goal_net: 4500,
+    weekly_goal_gross: 1500,
+    weekly_goal_net: 1000,
     fuel_price: 5.79,
     car_consumption: 11
 };
@@ -17,6 +19,10 @@ let appSettings = JSON.parse(localStorage.getItem('appSettings')) || {
 let sessionIdEmEdicao = null;
 let expenseIdEmEdicao = null;
 
+// ============ MANUTENÇÃO ============
+let manutencoes = JSON.parse(localStorage.getItem('manutencoes')) || [];
+let maintenanceIdEmEdicao = null;
+
 // Configurar data padrão (hoje) quando o DOM estiver pronto
 document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('dataSessao')) {
@@ -24,6 +30,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (document.getElementById('dataDespesa')) {
         document.getElementById('dataDespesa').valueAsDate = new Date();
+    }
+    if (document.getElementById('dataManutencao')) {
+        document.getElementById('dataManutencao').valueAsDate = new Date();
     }
     // Carregar configurações ao iniciar a página
     loadSettings();
@@ -38,6 +47,8 @@ function loadSettings() {
     appSettings = JSON.parse(localStorage.getItem('appSettings')) || {
         monthly_goal_gross: 6000,
         monthly_goal_net: 4500,
+        weekly_goal_gross: 1500,
+        weekly_goal_net: 1000,
         fuel_price: 5.79,
         car_consumption: 11
     };
@@ -45,6 +56,8 @@ function loadSettings() {
     // Preencher os inputs com as configurações atuais
     document.getElementById('monthlyGoalGross').value = appSettings.monthly_goal_gross.toFixed(2);
     document.getElementById('monthlyGoalNet').value = appSettings.monthly_goal_net.toFixed(2);
+    document.getElementById('weeklyGoalGross').value = appSettings.weekly_goal_gross.toFixed(2);
+    document.getElementById('weeklyGoalNet').value = appSettings.weekly_goal_net.toFixed(2);
     document.getElementById('fuelPrice').value = appSettings.fuel_price.toFixed(2);
     document.getElementById('carConsumption').value = appSettings.car_consumption.toFixed(1);
 
@@ -55,7 +68,9 @@ function loadSettings() {
 function updateSettingsSummary() {
     // Exibir valores no resumo
     document.getElementById('summaryGoalGross').textContent = 'R$ ' + appSettings.monthly_goal_gross.toFixed(2).replace('.', ',');
+    document.getElementById('summaryGoalGrossWeekly').textContent = 'R$ ' + appSettings.weekly_goal_gross.toFixed(2).replace('.', ',');
     document.getElementById('summaryGoalNet').textContent = 'R$ ' + appSettings.monthly_goal_net.toFixed(2).replace('.', ',');
+    document.getElementById('summaryGoalNetWeekly').textContent = 'R$ ' + appSettings.weekly_goal_net.toFixed(2).replace('.', ',');
     document.getElementById('summaryFuelPrice').textContent = 'R$ ' + appSettings.fuel_price.toFixed(2).replace('.', ',');
     document.getElementById('summaryCarConsumption').textContent = appSettings.car_consumption.toFixed(1).replace('.', ',') + ' km/l';
     
@@ -68,10 +83,12 @@ function saveSettings() {
     // Validar inputs
     const monthlyGoalGross = parseFloat(document.getElementById('monthlyGoalGross').value);
     const monthlyGoalNet = parseFloat(document.getElementById('monthlyGoalNet').value);
+    const weeklyGoalGross = parseFloat(document.getElementById('weeklyGoalGross').value);
+    const weeklyGoalNet = parseFloat(document.getElementById('weeklyGoalNet').value);
     const fuelPrice = parseFloat(document.getElementById('fuelPrice').value);
     const carConsumption = parseFloat(document.getElementById('carConsumption').value);
 
-    if (isNaN(monthlyGoalGross) || isNaN(monthlyGoalNet) || isNaN(fuelPrice) || isNaN(carConsumption)) {
+    if (isNaN(monthlyGoalGross) || isNaN(monthlyGoalNet) || isNaN(weeklyGoalGross) || isNaN(weeklyGoalNet) || isNaN(fuelPrice) || isNaN(carConsumption)) {
         alert('Por favor, preencha todos os campos com valores válidos.');
         return;
     }
@@ -80,6 +97,8 @@ function saveSettings() {
     appSettings = {
         monthly_goal_gross: monthlyGoalGross,
         monthly_goal_net: monthlyGoalNet,
+        weekly_goal_gross: weeklyGoalGross,
+        weekly_goal_net: weeklyGoalNet,
         fuel_price: fuelPrice,
         car_consumption: carConsumption
     };
@@ -164,9 +183,24 @@ function loadDashboardData() {
     });
     const ganhoMes = sessoesMes.reduce((sum, s) => sum + (parseFloat(s.valorTotal) || 0), 0);
     
-    // Calcular despesas
+    // Calcular despesas (incluir manutenções)
     const despesasTotal = despesas.reduce((sum, d) => sum + (parseFloat(d.valor) || 0), 0);
-    const lucroLiquido = ganhoMes - despesasTotal;
+    const manutencoesMes = manutencoes.reduce((sum, m) => sum + (parseFloat(m.valor) || 0), 0);
+    const despesasTotalComManutencao = despesasTotal + manutencoesMes;
+    const lucroLiquido = ganhoMes - despesasTotalComManutencao;
+    
+    // Calcular ganhos e despesas semana
+    const despesasSemana = despesas.filter(d => {
+        const dataDespesa = new Date(d.data);
+        return dataDespesa >= semanaPassada;
+    }).reduce((sum, d) => sum + (parseFloat(d.valor) || 0), 0);
+    
+    const manutencoesSemana = manutencoes.filter(m => {
+        const dataManutencao = new Date(m.data);
+        return dataManutencao >= semanaPassada;
+    }).reduce((sum, m) => sum + (parseFloat(m.valor) || 0), 0);
+    
+    const ganhoSemanaLiquido = ganhoSemana - despesasSemana - manutencoesSemana;
     
     // Atualizar elementos
     const elementos = {
@@ -176,7 +210,7 @@ function loadDashboardData() {
         ganhoHora: `R$ ${ganhoHora.toFixed(2)}`,
         ganhoSemana: `R$ ${ganhoSemana.toFixed(2)}`,
         ganhoMes: `R$ ${ganhoMes.toFixed(2)}`,
-        despesasTotal: `R$ ${despesasTotal.toFixed(2)}`,
+        despesasTotal: `R$ ${despesasTotalComManutencao.toFixed(2)}`,
         lucroLiquido: `R$ ${lucroLiquido.toFixed(2)}`
     };
     
@@ -195,13 +229,29 @@ function loadDashboardData() {
     if (progressFillGross) progressFillGross.style.width = Math.min(percentualGross, 100) + '%';
     if (progressTextGross) progressTextGross.textContent = `${Math.round(percentualGross)}% - R$ ${ganhoMes.toFixed(2)} / R$ ${appSettings.monthly_goal_gross.toFixed(2)}`;
     
-    // Atualizar progresso da meta líquida
+    // Atualizar progresso da meta líquida mensal
     const percentualNet = (lucroLiquido / appSettings.monthly_goal_net) * 100;
     const progressFillNet = document.getElementById('progressFillNet');
     const progressTextNet = document.getElementById('progressTextNet');
     
     if (progressFillNet) progressFillNet.style.width = Math.min(percentualNet, 100) + '%';
     if (progressTextNet) progressTextNet.textContent = `${Math.round(percentualNet)}% - R$ ${lucroLiquido.toFixed(2)} / R$ ${appSettings.monthly_goal_net.toFixed(2)}`;
+    
+    // Atualizar progresso da meta bruta semanal
+    const percentualGrossWeekly = (ganhoSemana / appSettings.weekly_goal_gross) * 100;
+    const progressFillGrossWeekly = document.getElementById('progressFillGrossWeekly');
+    const progressTextGrossWeekly = document.getElementById('progressTextGrossWeekly');
+    
+    if (progressFillGrossWeekly) progressFillGrossWeekly.style.width = Math.min(percentualGrossWeekly, 100) + '%';
+    if (progressTextGrossWeekly) progressTextGrossWeekly.textContent = `${Math.round(percentualGrossWeekly)}% - R$ ${ganhoSemana.toFixed(2)} / R$ ${appSettings.weekly_goal_gross.toFixed(2)}`;
+    
+    // Atualizar progresso da meta líquida semanal
+    const percentualNetWeekly = (ganhoSemanaLiquido / appSettings.weekly_goal_net) * 100;
+    const progressFillNetWeekly = document.getElementById('progressFillNetWeekly');
+    const progressTextNetWeekly = document.getElementById('progressTextNetWeekly');
+    
+    if (progressFillNetWeekly) progressFillNetWeekly.style.width = Math.min(percentualNetWeekly, 100) + '%';
+    if (progressTextNetWeekly) progressTextNetWeekly.textContent = `${Math.round(percentualNetWeekly)}% - R$ ${ganhoSemanaLiquido.toFixed(2)} / R$ ${appSettings.weekly_goal_net.toFixed(2)}`;
     
     // Atualizar últimas sessões
     const ultimasSecoesBody = document.getElementById('ultimasSecoesBody');
@@ -225,6 +275,9 @@ function loadDashboardData() {
     }
     
     console.log('Dashboard atualizado:', { saldoHoje, horasTrabalhadas, totalCorridas, ganhoHora, ganhoSemana, ganhoMes });
+    
+    // Carregar alertas de manutenção
+    carregarAlertas();
 }
 
 // ============ SESSÕES DE TRABALHO ============
@@ -254,6 +307,9 @@ function showSection(sectionId) {
         atualizarRelatorios();
     } else if (sectionId === 'configuracoes') {
         loadSettings();
+    } else if (sectionId === 'manutencao') {
+        atualizarTabelaManuteacoes();
+        carregarAlertas();
     }
 }
 
@@ -749,8 +805,25 @@ function atualizarRelatorios() {
         despesasPorCategoria[d.categoria] += parseFloat(d.valor) || 0;
     });
     
+    // Filtrar manutenções do período
+    let manutencoesFiltradas = manutencoes;
+    if (anoSelecionado) {
+        manutencoesFiltradas = manutencoesFiltradas.filter(m => {
+            const year = new Date(m.data).getFullYear();
+            return year == anoSelecionado;
+        });
+    }
+    if (mesSelecionado && anoSelecionado) {
+        manutencoesFiltradas = manutencoesFiltradas.filter(m => {
+            const month = new Date(m.data).getMonth() + 1;
+            return month == mesSelecionado;
+        });
+    }
+    
     const despesasTotal = despesasFiltradas.reduce((sum, d) => sum + (parseFloat(d.valor) || 0), 0);
-    const lucroLiquido = ganhoTotal - despesasTotal;
+    const manutencaoTotal = manutencoesFiltradas.reduce((sum, m) => sum + (parseFloat(m.valor) || 0), 0);
+    const despesasTotalComManutencao = despesasTotal + manutencaoTotal;
+    const lucroLiquido = ganhoTotal - despesasTotalComManutencao;
     
     const ganhoMedioHora = tempoTotalHoras > 0 ? ganhoTotal / tempoTotalHoras : 0;
     
@@ -759,7 +832,7 @@ function atualizarRelatorios() {
     document.getElementById('horasTotaisRel').textContent = `${Math.floor(tempoTotalHoras)}h`;
     document.getElementById('sessoesTotaisRel').textContent = sessoesFiltradas.length;
     document.getElementById('ganhoMedioHoraRel').textContent = `R$ ${ganhoMedioHora.toFixed(2)}`;
-    document.getElementById('despesasRel').textContent = `R$ ${despesasTotal.toFixed(2)}`;
+    document.getElementById('despesasRel').textContent = `R$ ${despesasTotalComManutencao.toFixed(2)}`;
     document.getElementById('lucroLiquidoRel').textContent = `R$ ${lucroLiquido.toFixed(2)}`;
     document.getElementById('corridasTotaisRel').textContent = corridasTotal;
     document.getElementById('distanciaTotalRel').textContent = `${distanciaTotal.toFixed(1)} km`;
@@ -823,7 +896,202 @@ function atualizarRelatorios() {
     document.getElementById('categoriasRelatorio').innerHTML = categoriasHtml || '<p style="color: #9ca3af;">Sem dados</p>';
 }
 
+// ============ MANUTENÇÃO DO VEÍCULO ============
 
+function adicionarManutencao(e) {
+    e.preventDefault();
+    
+    const data = document.getElementById('dataManutencao').value;
+    const tipo = document.getElementById('tipoManutencao').value;
+    const valor = parseFloat(document.getElementById('valorManutencao').value);
+    const quilometragem = parseInt(document.getElementById('quilometragemManutencao').value);
+    const descricao = document.getElementById('descricaoManutencao').value;
+    
+    // Validações
+    if (!data || !tipo || isNaN(valor) || valor <= 0 || isNaN(quilometragem) || quilometragem <= 0) {
+        alert('❌ Preencha todos os campos corretamente!');
+        return;
+    }
+    
+    // Se estamos em modo edição, atualizar; senão, criar novo
+    if (maintenanceIdEmEdicao !== null) {
+        // Atualizar manutenção existente
+        const index = manutencoes.findIndex(m => m.id === maintenanceIdEmEdicao);
+        if (index !== -1) {
+            manutencoes[index] = {
+                id: maintenanceIdEmEdicao,
+                data,
+                tipo,
+                valor,
+                quilometragem,
+                descricao
+            };
+            localStorage.setItem('manutencoes', JSON.stringify(manutencoes));
+            alert('✅ Manutenção atualizada com sucesso!');
+            maintenanceIdEmEdicao = null;
+            cancelarEdicaoManutencao();
+        }
+    } else {
+        // Adicionar nova manutenção
+        const manutencao = {
+            id: Date.now(),
+            data,
+            tipo,
+            valor,
+            quilometragem,
+            descricao
+        };
+        
+        manutencoes.push(manutencao);
+        localStorage.setItem('manutencoes', JSON.stringify(manutencoes));
+        alert('✅ Manutenção registrada com sucesso!');
+    }
+    
+    // Limpar form
+    document.getElementById('formManutencao').reset();
+    document.getElementById('dataManutencao').valueAsDate = new Date();
+    atualizarTabelaManuteacoes();
+    carregarAlertas();
+    loadDashboardData();
+    atualizarRelatorios();
+}
+
+function deletarManutencao(id) {
+    if (confirm('Deletar essa manutenção?')) {
+        manutencoes = manutencoes.filter(m => m.id !== id);
+        localStorage.setItem('manutencoes', JSON.stringify(manutencoes));
+        atualizarTabelaManuteacoes();
+        carregarAlertas();
+        loadDashboardData();
+        atualizarRelatorios();
+    }
+}
+
+function editarManutencao(id) {
+    const manutencao = manutencoes.find(m => m.id === id);
+    if (!manutencao) return;
+    
+    // Preencher formulário
+    document.getElementById('dataManutencao').value = manutencao.data;
+    document.getElementById('tipoManutencao').value = manutencao.tipo;
+    document.getElementById('valorManutencao').value = manutencao.valor;
+    document.getElementById('quilometragemManutencao').value = manutencao.quilometragem;
+    document.getElementById('descricaoManutencao').value = manutencao.descricao || '';
+    
+    // Marcar modo edição
+    maintenanceIdEmEdicao = id;
+    
+    // Atualizar botão
+    const submitBtn = document.getElementById('formManutencao').querySelector('button[type="submit"]');
+    submitBtn.textContent = 'Salvar Alterações';
+    submitBtn.style.backgroundColor = '#3b82f6';
+    
+    // Adicionar botão de cancelamento
+    let cancelBtn = document.getElementById('cancelarEditMaintenanceBtn');
+    if (!cancelBtn) {
+        cancelBtn = document.createElement('button');
+        cancelBtn.id = 'cancelarEditMaintenanceBtn';
+        cancelBtn.type = 'button';
+        cancelBtn.className = 'btn';
+        cancelBtn.textContent = 'Cancelar Edição';
+        cancelBtn.style.backgroundColor = '#6b7280';
+        cancelBtn.style.marginLeft = '10px';
+        cancelBtn.onclick = cancelarEdicaoManutencao;
+        document.getElementById('formManutencao').appendChild(cancelBtn);
+    }
+    
+    // Scroll para o formulário
+    document.getElementById('formManutencao').scrollIntoView({ behavior: 'smooth' });
+}
+
+function cancelarEdicaoManutencao() {
+    maintenanceIdEmEdicao = null;
+    document.getElementById('formManutencao').reset();
+    document.getElementById('dataManutencao').valueAsDate = new Date();
+    
+    const submitBtn = document.getElementById('formManutencao').querySelector('button[type="submit"]');
+    submitBtn.textContent = 'Registrar Manutenção';
+    submitBtn.style.backgroundColor = '';
+    
+    const cancelBtn = document.getElementById('cancelarEditMaintenanceBtn');
+    if (cancelBtn) cancelBtn.remove();
+}
+
+function atualizarTabelaManuteacoes() {
+    const tbody = document.getElementById('todasManutecoesBody');
+    
+    if (manutencoes.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="empty">Nenhuma manutenção registrada</td></tr>';
+        return;
+    }
+    
+    // Ordenar por data (mais recente primeiro)
+    const ordenadas = [...manutencoes].sort((a, b) => 
+        new Date(b.data) - new Date(a.data));
+    
+    tbody.innerHTML = ordenadas.map(m => `
+        <tr>
+            <td>${new Date(m.data).toLocaleDateString('pt-BR')}</td>
+            <td><strong>${m.tipo}</strong></td>
+            <td style="color: #ef4444;">R$ ${m.valor.toFixed(2)}</td>
+            <td>${m.quilometragem.toLocaleString('pt-BR')} km</td>
+            <td>
+                <button class="btn btn-warning" onclick="editarManutencao(${m.id})">Editar</button>
+                <button class="btn btn-danger" onclick="deletarManutencao(${m.id})">Deletar</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function verificarManutencoesVencidas() {
+    const vencidas = [];
+    
+    manutencoes.forEach(m => {
+        // Considerar vencida se passou 60 dias desde a data registrada
+        const dataProxima = new Date(m.data);
+        dataProxima.setDate(dataProxima.getDate() + 60);
+        
+        if (dataProxima < new Date()) {
+            vencidas.push(m.tipo);
+        }
+    });
+    
+    return vencidas;
+}
+
+function carregarAlertas() {
+    const vencidas = verificarManutencoesVencidas();
+    
+    const cardStatus = document.getElementById('statusManutencao');
+    const cardProximas = document.getElementById('proximasManutencoes');
+    
+    if (cardStatus) {
+        if (vencidas.length === 0) {
+            cardStatus.innerHTML = '<h3>🔧 Status Manutenção</h3><p style="color: #22c55e;">✅ Tudo em dia</p>';
+        } else {
+            const listaVencidas = vencidas.map(v => `<li style="color: #ef4444; margin-left: 1rem;">⚠️ ${v}</li>`).join('');
+            cardStatus.innerHTML = `<h3>🔧 Status Manutenção</h3><p style="color: #ef4444;">⚠️ ${vencidas.length} vencida(s)</p><ul style="list-style: none; padding: 0;">${listaVencidas}</ul>`;
+        }
+    }
+    
+    if (cardProximas) {
+        const hoje = new Date();
+        const proximoMes = new Date(hoje.getTime() + 30 * 24 * 60 * 60 * 1000);
+        
+        const proximas = manutencoes.filter(m => {
+            const dataProxima = new Date(m.data);
+            dataProxima.setDate(dataProxima.getDate() + 60);
+            return dataProxima >= hoje && dataProxima <= proximoMes;
+        });
+        
+        if (proximas.length === 0) {
+            cardProximas.innerHTML = '<h3>⏰ Próximas Manutenções</h3><p style="color: #22c55e;">Nenhuma próxima</p>';
+        } else {
+            const listaProximas = proximas.map(p => `<li style="color: #f59e0b; margin-left: 1rem;">📅 ${p.tipo}</li>`).join('');
+            cardProximas.innerHTML = `<h3>⏰ Próximas Manutenções</h3><p style="color: #f59e0b;">${proximas.length} próxima(s)</p><ul style="list-style: none; padding: 0;">${listaProximas}</ul>`;
+        }
+    }
+}
 
 window.addEventListener('DOMContentLoaded', () => {
     // Recarregar dados do localStorage
