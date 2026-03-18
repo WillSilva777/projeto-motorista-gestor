@@ -2,6 +2,7 @@
     const DB_NAME = 'motorista-gestor';
     const DB_VERSION = 1;
     const STORES = ['sessoes', 'despesas', 'manutencoes', 'settings'];
+    const PENDING_SYNC_KEY = '__motoristaGestorPendingSync';
     const LEGACY_KEYS = {
         sessoes: 'sessoes',
         despesas: 'despesas',
@@ -67,6 +68,89 @@
         localStorage.setItem(LEGACY_KEYS[storeName], JSON.stringify(records));
     }
 
+    function getPendingSyncMap() {
+        const rawValue = localStorage.getItem(PENDING_SYNC_KEY);
+        if (!rawValue) {
+            return {};
+        }
+
+        try {
+            const parsedValue = JSON.parse(rawValue);
+            if (!parsedValue || typeof parsedValue !== 'object' || Array.isArray(parsedValue)) {
+                return {};
+            }
+
+            return parsedValue;
+        } catch (error) {
+            console.warn('Nao foi possivel ler pendencias de sincronizacao.', error);
+            return {};
+        }
+    }
+
+    function persistPendingSyncMap(pendingMap) {
+        const pendingStores = STORES.filter((storeName) => Boolean(pendingMap[storeName]));
+
+        try {
+            if (pendingStores.length === 0) {
+                localStorage.removeItem(PENDING_SYNC_KEY);
+                return;
+            }
+
+            const normalizedMap = {};
+            pendingStores.forEach((storeName) => {
+                normalizedMap[storeName] = true;
+            });
+
+            localStorage.setItem(PENDING_SYNC_KEY, JSON.stringify(normalizedMap));
+        } catch (error) {
+            console.warn('Nao foi possivel atualizar o estado de sincronizacao pendente.', error);
+        }
+    }
+
+    function getPendingStores() {
+        const pendingMap = getPendingSyncMap();
+        return STORES.filter((storeName) => Boolean(pendingMap[storeName]));
+    }
+
+    function markStorePendingSync(storeName) {
+        const pendingMap = getPendingSyncMap();
+        pendingMap[storeName] = true;
+        persistPendingSyncMap(pendingMap);
+    }
+
+    function clearStorePendingSync(storeName) {
+        const pendingMap = getPendingSyncMap();
+        if (!pendingMap[storeName]) {
+            return;
+        }
+
+        delete pendingMap[storeName];
+        persistPendingSyncMap(pendingMap);
+    }
+
+    function tryMirrorFallbackStore(storeName, records) {
+        try {
+            writeFallbackStore(storeName, records);
+        } catch (error) {
+            console.warn(`Nao foi possivel espelhar ${storeName} no localStorage.`, error);
+        }
+    }
+
+    function upsertRecord(records, record) {
+        const recordIndex = records.findIndex((item) => item.id === record.id);
+        if (recordIndex === -1) {
+            return records.concat(record);
+        }
+
+        return records.map((item) => {
+            if (item.id !== record.id) {
+                return item;
+            }
+
+            return record;
+        });
+    }
+
     function openDatabase() {
         return new Promise((resolve, reject) => {
             if (!('indexedDB' in window)) {
@@ -86,7 +170,12 @@
                 });
             };
 
-            request.onsuccess = () => resolve(request.result);
+            request.onblocked = () => reject(new Error('Abertura do IndexedDB bloqueada por outra aba.'));
+            request.onsuccess = () => {
+                const database = request.result;
+                database.onversionchange = () => database.close();
+                resolve(database);
+            };
             request.onerror = () => reject(request.error || new Error('Falha ao abrir o IndexedDB.'));
         });
     }
@@ -166,22 +255,23 @@
         }
     }
 
-    function updateMemoryCache(storeName, record) {
-        const currentRecords = memoryCache[storeName] || [];
-        const recordIndex = currentRecords.findIndex((item) => item.id === record.id);
-
-        if (recordIndex === -1) {
-            memoryCache[storeName] = currentRecords.concat(record);
+    async function syncPendingLocalChangesToIndexedDb() {
+        const pendingStores = getPendingStores();
+        if (pendingStores.length === 0) {
             return;
         }
 
-        memoryCache[storeName] = currentRecords.map((item) => {
-            if (item.id !== record.id) {
-                return item;
+        for (const storeName of pendingStores) {
+            const localRecords = getLegacyValue(storeName);
+
+            await clearStoreInDb(storeName);
+            for (const record of localRecords) {
+                await putInStore(storeName, record);
             }
 
-            return record;
-        });
+            memoryCache[storeName] = cloneValue(localRecords);
+            clearStorePendingSync(storeName);
+        }
     }
 
     async function init() {
@@ -190,6 +280,7 @@
             storageMode = 'indexeddb';
             await hydrateCacheFromIndexedDb();
             await migrateLegacyLocalStorage();
+            await syncPendingLocalChangesToIndexedDb();
         } catch (error) {
             storageMode = 'localstorage';
             db = null;
@@ -215,34 +306,47 @@
 
     async function put(storeName, record) {
         const clonedRecord = cloneValue(record);
-        updateMemoryCache(storeName, clonedRecord);
+        const currentRecords = memoryCache[storeName] || [];
+        const nextRecords = upsertRecord(currentRecords, clonedRecord);
 
         if (storageMode === 'localstorage') {
-            writeFallbackStore(storeName, memoryCache[storeName]);
+            writeFallbackStore(storeName, nextRecords);
+            memoryCache[storeName] = nextRecords;
+            markStorePendingSync(storeName);
             return cloneValue(clonedRecord);
         }
 
         await putInStore(storeName, clonedRecord);
+        memoryCache[storeName] = nextRecords;
+        clearStorePendingSync(storeName);
+        tryMirrorFallbackStore(storeName, nextRecords);
         return cloneValue(clonedRecord);
     }
 
     async function remove(storeName, id) {
-        memoryCache[storeName] = (memoryCache[storeName] || []).filter((item) => item.id !== id);
+        const currentRecords = memoryCache[storeName] || [];
+        const nextRecords = currentRecords.filter((item) => item.id !== id);
 
         if (storageMode === 'localstorage') {
-            writeFallbackStore(storeName, memoryCache[storeName]);
+            writeFallbackStore(storeName, nextRecords);
+            memoryCache[storeName] = nextRecords;
+            markStorePendingSync(storeName);
             return;
         }
 
         await deleteFromStore(storeName, id);
+        memoryCache[storeName] = nextRecords;
+        clearStorePendingSync(storeName);
+        tryMirrorFallbackStore(storeName, nextRecords);
     }
 
     async function replaceAll(storeName, records) {
         const clonedRecords = cloneValue(records || []);
-        memoryCache[storeName] = clonedRecords;
 
         if (storageMode === 'localstorage') {
             writeFallbackStore(storeName, clonedRecords);
+            memoryCache[storeName] = clonedRecords;
+            markStorePendingSync(storeName);
             return cloneValue(clonedRecords);
         }
 
@@ -251,6 +355,9 @@
             await putInStore(storeName, record);
         }
 
+        memoryCache[storeName] = clonedRecords;
+        clearStorePendingSync(storeName);
+        tryMirrorFallbackStore(storeName, clonedRecords);
         return cloneValue(clonedRecords);
     }
 
