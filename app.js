@@ -121,8 +121,34 @@ function loadSettings() {
     document.getElementById('weeklyGoalNet').value = appSettings.weekly_goal_net.toFixed(2);
     document.getElementById('fuelPrice').value = appSettings.fuel_price.toFixed(2);
     document.getElementById('carConsumption').value = appSettings.car_consumption.toFixed(1);
+    document.getElementById('vehicleOperationType').value = appSettings.vehicle_operation_type;
+    document.getElementById('insuranceMonthly').value = appSettings.insurance_monthly.toFixed(2);
+    document.getElementById('vehicleInstallmentMonthly').value = appSettings.vehicle_installment_monthly.toFixed(2);
+    document.getElementById('vehicleRentalWeekly').value = appSettings.vehicle_rental_weekly.toFixed(2);
+    document.getElementById('otherFixedCostsMonthly').value = appSettings.other_fixed_costs_monthly.toFixed(2);
 
+    updateFixedCostFields();
     updateSettingsSummary();
+}
+
+function updateFixedCostFields() {
+    const operationType = document.getElementById('vehicleOperationType').value;
+    const installmentGroup = document.getElementById('installmentGroup');
+    const rentalGroup = document.getElementById('rentalGroup');
+
+    installmentGroup.style.display = operationType === 'owned_financed' ? 'block' : 'none';
+    rentalGroup.style.display = operationType === 'rented' ? 'block' : 'none';
+
+    if (operationType === 'owned_financed') {
+        document.getElementById('vehicleInstallmentMonthly').required = true;
+        document.getElementById('vehicleRentalWeekly').required = false;
+    } else if (operationType === 'rented') {
+        document.getElementById('vehicleInstallmentMonthly').required = false;
+        document.getElementById('vehicleRentalWeekly').required = true;
+    } else {
+        document.getElementById('vehicleInstallmentMonthly').required = false;
+        document.getElementById('vehicleRentalWeekly').required = false;
+    }
 }
 
 function updateSettingsSummary() {
@@ -133,6 +159,14 @@ function updateSettingsSummary() {
     setElementText('summaryFuelPrice', formatCurrency(appSettings.fuel_price));
     setElementText('summaryCarConsumption', `${appSettings.car_consumption.toFixed(1).replace('.', ',')} km/l`);
     setElementText('summaryCostPerKmFuel', formatCurrency(window.settingsService.getFuelCostPerKm(appSettings)));
+    
+    const dailyCost = window.settingsService.getFixedCostsDaily(appSettings);
+    const weeklyCost = window.settingsService.getFixedCostsWeekly(appSettings);
+    const monthlyCost = window.settingsService.getFixedCostsMonthly(appSettings);
+    
+    setElementText('summaryCostFixedDaily', formatCurrency(dailyCost));
+    setElementText('summaryCostFixedWeekly', formatCurrency(weeklyCost));
+    setElementText('summaryCostFixedMonthly', formatCurrency(monthlyCost));
 }
 
 function renderBackupSummary() {
@@ -191,8 +225,9 @@ function renderDashboard() {
     setElementText('ganhoHora', formatCurrency(dashboardData.ganhoHoraHoje));
     setElementText('ganhoSemana', formatCurrency(dashboardData.ganhoSemana));
     setElementText('ganhoMes', formatCurrency(dashboardData.ganhoMes));
-    setElementText('despesasTotal', formatCurrency(dashboardData.totalDespesasMes));
-    setElementText('lucroLiquido', formatCurrency(dashboardData.lucroLiquidoMes));
+    setElementText('despesasTotal', formatCurrency(dashboardData.totalDespesasMes + dashboardData.custosFixosMensais));
+    setElementText('lucroOperacional', formatCurrency(dashboardData.lucroOperacionalMes));
+    setElementText('lucroReal', formatCurrency(dashboardData.lucroRealMes));
 
     updateProgress(
         'progressFillGross',
@@ -396,7 +431,7 @@ function atualizarRelatorios() {
     setElementText('sessoesTotaisRel', String(reportData.totalSessoes));
     setElementText('ganhoMedioHoraRel', formatCurrency(reportData.ganhoMedioHora));
     setElementText('despesasRel', formatCurrency(reportData.despesasComManutencao));
-    setElementText('lucroLiquidoRel', formatCurrency(reportData.lucroLiquido));
+    setElementText('lucroLiquidoRel', formatCurrency(reportData.lucroOperacional));
     setElementText('corridasTotaisRel', String(reportData.corridasTotais));
     setElementText('distanciaTotalRel', `${reportData.distanciaTotal.toFixed(1).replace('.', ',')} km`);
     setElementText('ganhoKmRel', formatCurrency(reportData.ganhoKm));
@@ -472,8 +507,13 @@ async function saveSettings() {
     const weeklyGoalNet = Number(document.getElementById('weeklyGoalNet').value);
     const fuelPrice = Number(document.getElementById('fuelPrice').value);
     const carConsumption = Number(document.getElementById('carConsumption').value);
+    const vehicleOperationType = document.getElementById('vehicleOperationType').value;
+    const insuranceMonthly = Number(document.getElementById('insuranceMonthly').value);
+    const vehicleInstallmentMonthly = Number(document.getElementById('vehicleInstallmentMonthly').value);
+    const vehicleRentalWeekly = Number(document.getElementById('vehicleRentalWeekly').value);
+    const otherFixedCostsMonthly = Number(document.getElementById('otherFixedCostsMonthly').value);
 
-    if ([monthlyGoalGross, monthlyGoalNet, weeklyGoalGross, weeklyGoalNet, fuelPrice, carConsumption].some((value) => !Number.isFinite(value))) {
+    if ([monthlyGoalGross, monthlyGoalNet, weeklyGoalGross, weeklyGoalNet, fuelPrice, carConsumption, insuranceMonthly, vehicleInstallmentMonthly, vehicleRentalWeekly, otherFixedCostsMonthly].some((value) => !Number.isFinite(value))) {
         alert('Preencha todas as configuracoes com valores validos.');
         return;
     }
@@ -483,13 +523,28 @@ async function saveSettings() {
         return;
     }
 
+    if (vehicleOperationType === 'owned_financed' && vehicleInstallmentMonthly === 0 && document.getElementById('vehicleInstallmentMonthly').required) {
+        alert('Por favor, preencha o valor da parcela mensal para veiculo financiado.');
+        return;
+    }
+
+    if (vehicleOperationType === 'rented' && vehicleRentalWeekly === 0 && document.getElementById('vehicleRentalWeekly').required) {
+        alert('Por favor, preencha o valor do aluguel semanal para veiculo alugado.');
+        return;
+    }
+
     appSettings = await window.settingsService.save({
         monthly_goal_gross: monthlyGoalGross,
         monthly_goal_net: monthlyGoalNet,
         weekly_goal_gross: weeklyGoalGross,
         weekly_goal_net: weeklyGoalNet,
         fuel_price: fuelPrice,
-        car_consumption: carConsumption
+        car_consumption: carConsumption,
+        vehicle_operation_type: vehicleOperationType,
+        insurance_monthly: insuranceMonthly,
+        vehicle_installment_monthly: vehicleInstallmentMonthly,
+        vehicle_rental_weekly: vehicleRentalWeekly,
+        other_fixed_costs_monthly: otherFixedCostsMonthly
     });
 
     refreshUI();

@@ -56,8 +56,14 @@
                     <p class="stat-value danger" id="despesasTotal">R$ 0,00</p>
                 </div>
                 <div class="stat-card">
-                    <p class="stat-label">Lucro Liquido</p>
-                    <p class="stat-value" id="lucroLiquido">R$ 0,00</p>
+                    <p class="stat-label">Lucro Operacional</p>
+                    <p class="stat-value" id="lucroOperacional">R$ 0,00</p>
+                    <p class="stat-hint" style="margin-top: 0.5rem;">Antes dos custos fixos</p>
+                </div>
+                <div class="stat-card profit-card">
+                    <p class="stat-label">Lucro Real Completo</p>
+                    <p class="stat-value" id="lucroReal">R$ 0,00</p>
+                    <p class="stat-hint" style="margin-top: 0.5rem;">Seu lucro real</p>
                 </div>
             </div>
 
@@ -236,7 +242,7 @@
 
                     <div class="form-group">
                         <label>Descricao:</label>
-                        <input type="text" id="descricaoDespesa" placeholder="Ex: Troca de oleo">
+                        <input type="text" id="descricaoDespesa" placeholder="Ex: Gasolina">
                     </div>
 
                     <button type="submit" class="btn btn-primary">Registrar Despesa</button>
@@ -428,48 +434,112 @@
         <section id="configuracoes" class="section">
             <h2>Configuracoes</h2>
 
-            <div class="card form-card">
-                <h3>Configuracoes Financeiras</h3>
+            <!-- Form Cards Container - Lado a lado em Desktop -->
+            <div class="configs-forms-grid">
+                <div class="card form-card">
+                    <h3>Configuracoes Financeiras</h3>
 
-                <form id="formConfiguracoes">
-                    <div class="form-group">
-                        <label>Meta Mensal Bruta (R$)</label>
-                        <input type="number" id="monthlyGoalGross" step="0.01" min="0" placeholder="0.00" required>
-                        <p class="form-hint">Renda bruta mensal almejada.</p>
+                    <form id="formConfiguracoes">
+                        <div class="form-group">
+                            <label>Meta Mensal Bruta (R$)</label>
+                            <input type="number" id="monthlyGoalGross" step="0.01" min="0" placeholder="0.00" required>
+                            <p class="form-hint">Renda bruta mensal almejada.</p>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Meta Mensal Liquida (R$)</label>
+                            <input type="number" id="monthlyGoalNet" step="0.01" min="0" placeholder="0.00" required>
+                            <p class="form-hint">Lucro liquido mensal almejado.</p>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Meta Semanal Bruta (R$)</label>
+                            <input type="number" id="weeklyGoalGross" step="0.01" min="0" placeholder="0.00" required>
+                            <p class="form-hint">Renda bruta semanal almejada.</p>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Meta Semanal Liquida (R$)</label>
+                            <input type="number" id="weeklyGoalNet" step="0.01" min="0" placeholder="0.00" required>
+                            <p class="form-hint">Lucro liquido semanal almejado.</p>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Preco Medio do Combustivel (R$)</label>
+                            <input type="number" id="fuelPrice" step="0.01" min="0" placeholder="0.00" required>
+                            <p class="form-hint">Preco medio pago por litro.</p>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Consumo do Carro (km/l)</label>
+                            <input type="number" id="carConsumption" step="0.1" min="0.1" placeholder="0.0" required>
+                            <p class="form-hint">Quantos quilometros o carro faz por litro.</p>
+                        </div>
+
+                        <button type="button" onclick="saveSettings()" class="btn btn-primary">Salvar Configuracoes</button>
+                    </form>
+                </div>
+
+                <div class="card form-card">
+                    <h3>Custos Fixos do Veiculo</h3>
+
+                    <form id="formCustosFixos">
+                        <div class="form-group">
+                            <label>Tipo de Operacao do Veiculo</label>
+                            <select id="vehicleOperationType" onchange="updateFixedCostFields()" required>
+                                <option value="owned_paid_off">Proprio Quitado</option>
+                                <option value="owned_financed">Proprio Financiado</option>
+                                <option value="rented">Alugado</option>
+                            </select>
+                            <p class="form-hint">Selecione o tipo de operacao do seu veiculo.</p>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Seguro Mensal (R$)</label>
+                            <input type="number" id="insuranceMonthly" step="0.01" min="0" placeholder="0.00" required>
+                            <p class="form-hint">Custo mensal do seguro do veiculo.</p>
+                        </div>
+
+                        <div class="form-group" id="installmentGroup" style="display: none;">
+                            <label>Parcela Mensal do Veiculo (R$)</label>
+                            <input type="number" id="vehicleInstallmentMonthly" step="0.01" min="0" placeholder="0.00">
+                            <p class="form-hint">Custo mensal do financiamento (apenas para veiculo financiado).</p>
+                        </div>
+
+                        <div class="form-group" id="rentalGroup" style="display: none;">
+                            <label>Aluguel Semanal (R$)</label>
+                            <input type="number" id="vehicleRentalWeekly" step="0.01" min="0" placeholder="0.00">
+                            <p class="form-hint">Custo semanal do aluguel do veiculo (apenas para veiculo alugado).</p>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Outros Custos Fixos Mensais (R$)</label>
+                            <input type="number" id="otherFixedCostsMonthly" step="0.01" min="0" placeholder="0.00" required>
+                            <p class="form-hint">Exemplo: IPVA, licenciamento, rastreador, etc.</p>
+                        </div>
+
+                        <button type="button" onclick="saveSettings()" class="btn btn-primary">Salvar Configuracoes</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="card">
+                <h3>Resumo dos Custos Fixos</h3>
+                <div class="settings-summary">
+                    <div class="summary-item">
+                        <span class="summary-label">Custo Fixo Diario:</span>
+                        <span class="summary-value" id="summaryCostFixedDaily">R$ 0,00</span>
                     </div>
-
-                    <div class="form-group">
-                        <label>Meta Mensal Liquida (R$)</label>
-                        <input type="number" id="monthlyGoalNet" step="0.01" min="0" placeholder="0.00" required>
-                        <p class="form-hint">Lucro liquido mensal almejado.</p>
+                    <div class="summary-item">
+                        <span class="summary-label">Custo Fixo Semanal:</span>
+                        <span class="summary-value" id="summaryCostFixedWeekly">R$ 0,00</span>
                     </div>
-
-                    <div class="form-group">
-                        <label>Meta Semanal Bruta (R$)</label>
-                        <input type="number" id="weeklyGoalGross" step="0.01" min="0" placeholder="0.00" required>
-                        <p class="form-hint">Renda bruta semanal almejada.</p>
+                    <div class="summary-item">
+                        <span class="summary-label">Custo Fixo Mensal:</span>
+                        <span class="summary-value" id="summaryCostFixedMonthly">R$ 0,00</span>
                     </div>
-
-                    <div class="form-group">
-                        <label>Meta Semanal Liquida (R$)</label>
-                        <input type="number" id="weeklyGoalNet" step="0.01" min="0" placeholder="0.00" required>
-                        <p class="form-hint">Lucro liquido semanal almejado.</p>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Preco Medio do Combustivel (R$)</label>
-                        <input type="number" id="fuelPrice" step="0.01" min="0" placeholder="0.00" required>
-                        <p class="form-hint">Preco medio pago por litro.</p>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Consumo do Carro (km/l)</label>
-                        <input type="number" id="carConsumption" step="0.1" min="0.1" placeholder="0.0" required>
-                        <p class="form-hint">Quantos quilometros o carro faz por litro.</p>
-                    </div>
-
-                    <button type="button" onclick="saveSettings()" class="btn btn-primary">Salvar Configuracoes</button>
-                </form>
+                </div>
             </div>
 
             <div class="card">
@@ -506,6 +576,7 @@
                 </div>
             </div>
 
+            <!-- Backup Card -->
             <div class="card">
                 <h3>Backup Local</h3>
                 <p class="form-hint">Exporte um JSON para guardar seus dados no dispositivo ou importe um backup para restaurar o app.</p>

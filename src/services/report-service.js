@@ -76,6 +76,40 @@
         });
     }
 
+    // ===== CÁLCULOS DE LUCRO =====
+    /**
+     * Calcula o lucro operacional (antes dos custos fixos do veículo)
+     * Lucro Operacional = Faturamento Bruto - Custos Variáveis - Manutenção
+     * @param {number} ganhoTotal - Faturamento bruto total
+     * @param {number} despesasComManutencao - Soma de despesas operacionais + manutenção
+     * @returns {number} Lucro operacional
+     */
+    function calcularLucroOperacional(ganhoTotal, despesasComManutencao) {
+        return Math.max(0, ganhoTotal - despesasComManutencao);
+    }
+
+    /**
+     * Calcula o lucro real completo (após custos fixos do veículo)
+     * Lucro Real = Lucro Operacional - Custos Fixos do Veículo
+     * @param {number} lucroOperacional - Lucro operacional
+     * @param {number} custosFixosNoPeriodo - Custos fixos do veículo no período
+     * @returns {number} Lucro real completo
+     */
+    function calcularLucroReal(lucroOperacional, custosFixosNoPeriodo) {
+        const lucroReal = lucroOperacional - custosFixosNoPeriodo;
+        return lucroReal;
+    }
+
+    /**
+     * Calcula custos fixos para um período específico
+     * @param {number} custosFixosDiarios - Custos fixos em reais por dia
+     * @param {number} diasNoPeriodo - Número de dias no período (ex: 7 para semana, 30 para mês)
+     * @returns {number} Custos fixos totais do período
+     */
+    function calcularCustosFixosNoPeriodo(custosFixosDiarios, diasNoPeriodo) {
+        return custosFixosDiarios * diasNoPeriodo;
+    }
+
     function buildDashboardData(sessoes, despesas, manutencoes, settings, now) {
         const currentDate = now || new Date();
         const todayKey = toDateKey(currentDate);
@@ -99,8 +133,20 @@
         const ganhoMes = sumField(sessoesMes, 'valorTotal');
         const totalDespesasSemana = sumField(despesasSemana, 'valor') + sumField(manutencoesSemana, 'valor');
         const totalDespesasMes = sumField(despesasMes, 'valor') + sumField(manutencoesMes, 'valor');
-        const lucroLiquidoMes = ganhoMes - totalDespesasMes;
-        const lucroLiquidoSemana = ganhoSemana - totalDespesasSemana;
+        
+        // Custos fixos do veículo em períodos diferentes
+        const custosFixosDiarios = window.settingsService.getFixedCostsDaily(settings);
+        const custosFixosSemanais = window.settingsService.getFixedCostsWeekly(settings);
+        const custosFixosMensais = window.settingsService.getFixedCostsMonthly(settings);
+        
+        // Cálculos de lucro mensal
+        const custosFixosDiasTranscorridosMes = Math.ceil(31 * custosFixosDiarios);
+        const lucroOperacionalMes = calcularLucroOperacional(ganhoMes, totalDespesasMes);
+        const lucroRealMes = calcularLucroReal(lucroOperacionalMes, custosFixosDiasTranscorridosMes);
+        
+        // Cálculos de lucro semanal
+        const lucroOperacionalSemana = calcularLucroOperacional(ganhoSemana, totalDespesasSemana);
+        const lucroRealSemana = calcularLucroReal(lucroOperacionalSemana, custosFixosSemanais);
 
         return {
             saldoHoje,
@@ -110,8 +156,16 @@
             ganhoSemana,
             ganhoMes,
             totalDespesasMes,
-            lucroLiquidoMes,
-            lucroLiquidoSemana,
+            // Lucro Operacional (antes dos custos fixos)
+            lucroOperacionalMes,
+            lucroOperacionalSemana,
+            // Lucro Real Completo (após custos fixos)
+            lucroRealMes,
+            lucroRealSemana,
+            // Custos fixos detalhados
+            custosFixosDiarios,
+            custosFixosSemanais,
+            custosFixosMensais,
             latestSessions: sortByMostRecent(sessoes).slice(0, 5),
             monthlyGoals: {
                 gross: {
@@ -119,7 +173,7 @@
                     target: Number(settings.monthly_goal_gross) || 0
                 },
                 net: {
-                    current: lucroLiquidoMes,
+                    current: lucroRealMes,
                     target: Number(settings.monthly_goal_net) || 0
                 }
             },
@@ -129,7 +183,7 @@
                     target: Number(settings.weekly_goal_gross) || 0
                 },
                 net: {
-                    current: lucroLiquidoSemana,
+                    current: lucroRealSemana,
                     target: Number(settings.weekly_goal_net) || 0
                 }
             }
@@ -178,7 +232,12 @@
         const despesasTotal = sumField(despesasFiltradas, 'valor');
         const manutencaoTotal = sumField(manutencoesFiltradas, 'valor');
         const despesasComManutencao = despesasTotal + manutencaoTotal;
-        const lucroLiquido = ganhoTotal - despesasComManutencao;
+        const lucroOperacional = calcularLucroOperacional(ganhoTotal, despesasComManutencao);
+
+        const fixedCostsDailyAmount = window.settingsService.getFixedCostsDaily(settings);
+        const daysInPeriod = monthValue ? 30 : 365;
+        const fixedCostsInPeriod = calcularCustosFixosNoPeriodo(fixedCostsDailyAmount, daysInPeriod);
+        const lucroReal = calcularLucroReal(lucroOperacional, fixedCostsInPeriod);
 
         const ganhoKm = distanciaTotal > 0 ? ganhoTotal / distanciaTotal : 0;
         const custoCombustivelKm = window.settingsService.getFuelCostPerKm(settings);
@@ -220,7 +279,9 @@
             corridasTotais,
             ganhoMedioHora,
             despesasComManutencao,
-            lucroLiquido,
+            lucroOperacional,
+            lucroReal,
+            fixedCostsInPeriod,
             ganhoKm,
             custoCombustivelKm,
             lucroRealKm,
@@ -263,6 +324,9 @@
         formatTime,
         minutesToParts,
         sortByMostRecent,
+        calcularLucroOperacional,
+        calcularLucroReal,
+        calcularCustosFixosNoPeriodo,
         buildDashboardData,
         getWeeklyEarningsData,
         getAvailableYears,

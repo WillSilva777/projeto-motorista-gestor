@@ -5,7 +5,12 @@
         weekly_goal_gross: 1500,
         weekly_goal_net: 1000,
         fuel_price: 5.79,
-        car_consumption: 11
+        car_consumption: 11,
+        vehicle_operation_type: 'rented',
+        insurance_monthly: 0,
+        vehicle_installment_monthly: 0,
+        vehicle_rental_weekly: 0,
+        other_fixed_costs_monthly: 0
     });
 
     function toNumber(value, fallbackValue) {
@@ -22,7 +27,12 @@
             weekly_goal_gross: Math.max(0, toNumber(settings.weekly_goal_gross, DEFAULT_SETTINGS.weekly_goal_gross)),
             weekly_goal_net: Math.max(0, toNumber(settings.weekly_goal_net, DEFAULT_SETTINGS.weekly_goal_net)),
             fuel_price: Math.max(0, toNumber(settings.fuel_price, DEFAULT_SETTINGS.fuel_price)),
-            car_consumption: Math.max(0.1, toNumber(settings.car_consumption, DEFAULT_SETTINGS.car_consumption))
+            car_consumption: Math.max(0.1, toNumber(settings.car_consumption, DEFAULT_SETTINGS.car_consumption)),
+            vehicle_operation_type: String(settings.vehicle_operation_type || DEFAULT_SETTINGS.vehicle_operation_type),
+            insurance_monthly: Math.max(0, toNumber(settings.insurance_monthly, DEFAULT_SETTINGS.insurance_monthly)),
+            vehicle_installment_monthly: Math.max(0, toNumber(settings.vehicle_installment_monthly, DEFAULT_SETTINGS.vehicle_installment_monthly)),
+            vehicle_rental_weekly: Math.max(0, toNumber(settings.vehicle_rental_weekly, DEFAULT_SETTINGS.vehicle_rental_weekly)),
+            other_fixed_costs_monthly: Math.max(0, toNumber(settings.other_fixed_costs_monthly, DEFAULT_SETTINGS.other_fixed_costs_monthly))
         };
     }
 
@@ -44,11 +54,39 @@
             : 0;
     }
 
+    function getFixedCostsDaily(settings) {
+        const sanitizedSettings = sanitize(settings);
+        const monthlyTotal = getFixedCostsMonthly(sanitizedSettings);
+        return monthlyTotal / 30;
+    }
+
+    function getFixedCostsWeekly(settings) {
+        const sanitizedSettings = sanitize(settings);
+        const monthlyTotal = getFixedCostsMonthly(sanitizedSettings);
+        return (monthlyTotal / 30) * 7;
+    }
+
+    function getFixedCostsMonthly(settings) {
+        const sanitizedSettings = sanitize(settings);
+        let monthlyTotal = sanitizedSettings.insurance_monthly + 
+                          sanitizedSettings.vehicle_installment_monthly + 
+                          sanitizedSettings.other_fixed_costs_monthly;
+
+        if (sanitizedSettings.vehicle_operation_type === 'rented') {
+            monthlyTotal += sanitizedSettings.vehicle_rental_weekly * 4.29;
+        }
+
+        return monthlyTotal;
+    }
+
     window.settingsService = {
         DEFAULT_SETTINGS,
         sanitize,
         load,
         save,
-        getFuelCostPerKm
+        getFuelCostPerKm,
+        getFixedCostsDaily,
+        getFixedCostsWeekly,
+        getFixedCostsMonthly
     };
 })();
